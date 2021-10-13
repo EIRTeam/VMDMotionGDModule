@@ -163,12 +163,12 @@ public:
 		}
 	};
 
-	std::vector<BoneKeyframe> bone_keyframes;
-	std::vector<FaceKeyframe> face_keyframes;
-	std::vector<CameraKeyframe> camera_keyframes;
-	std::vector<LightKeyFrame> light_keyframes;
-	std::vector<SelfShadowKeyframe> self_shadow_keyframes;
-	std::vector<IKKeyframe> ik_keyframes;
+	std::vector<BoneKeyframe> bone_keyframes = {};
+	std::vector<FaceKeyframe> face_keyframes = {};
+	std::vector<CameraKeyframe> camera_keyframes = {};
+	std::vector<LightKeyFrame> light_keyframes = {};
+	std::vector<SelfShadowKeyframe> self_shadow_keyframes = {};
+	std::vector<IKKeyframe> ik_keyframes = {};
 
 	Error load(String path);
 };

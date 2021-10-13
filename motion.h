@@ -41,7 +41,6 @@
 
 class VMDMotion {
 private:
-	void _process();
 
 public:
 	class BoneCurve {
@@ -75,7 +74,7 @@ public:
 
 		Vector3 estimate_rotation_center_from_pos() {
 			Vector3 A0, A1, A2, B;
-			for (int i = 1; i < keyframes.size(); i++) {
+			for (uint64_t i = 1; i < keyframes.size(); i++) {
 				Vector3 p = keyframes[i].position;
 				float b = p.length_squared() / 2.0f;
 				float w = p.distance_to(keyframes[i - 1].position) + p.distance_to(keyframes[i + 1].position);
@@ -113,6 +112,7 @@ public:
 	};
 
 	class IKCurve {
+	public:
 		std::vector<VMD::IKKeyframe> keyframes;
 		std::vector<std::tuple<String, bool>> sample(float frame_number) {
 			VMD::IKKeyframe *prev_frame = nullptr, *next_frame = nullptr;
@@ -136,7 +136,10 @@ public:
 	void add_clip(VMD *vmd);
 	std::map<String, BoneCurve> bones;
 	std::map<String, FaceCurve> faces;
+	IKCurve ik;
+	int get_max_frame();
+	void process_vmds();
 
-	VMDMotion(std::vector<VMD *> vmds);
+	VMDMotion();
 };
 #endif

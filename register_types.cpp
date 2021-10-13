@@ -29,15 +29,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-/* register_types.cpp */
-
 #include "register_types.h"
 
 #include "core/class_db.h"
 #include "vmd.h"
+#include "animator.h"
+#include "vmd_player.h"
 
 void register_vmd_types() {
 	ClassDB::register_class<VMD>();
+	ClassDB::register_class<VMDAnimator>();
+	ClassDB::register_class<VMDPlayer>();
 }
 
 void unregister_vmd_types() {

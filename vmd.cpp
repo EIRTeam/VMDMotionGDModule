@@ -38,7 +38,6 @@ Error VMD::load(String path) {
 	Error err;
 	FileAccess *file_access = FileAccess::open(path, FileAccess::READ, &err);
 	if (file_access) {
-		uint64_t start_time = OS::get_singleton()->get_ticks_usec();
 		String version = VMDUtils::read_vmd_string(file_access, 30);
 		if (!version.begins_with("Vocaloid Motion Data")) {
 			print_error("Invalid VMD file!");
@@ -102,15 +101,6 @@ Error VMD::load(String path) {
 		for (int i = 0; i < ik_frame_count; i++) {
 			ik_keyframes[i].read(file_access);
 		}
-
-		std::vector<VMD *> vmds{
-			this
-		};
-
-		VMDMotion mot = VMDMotion(vmds);
-		mot.add_clip(this);
-
-		print_line(vformat("Loaded VMD in %d ms", (OS::get_singleton()->get_ticks_usec() - start_time) / 1000.0));
 
 		return OK;
 	}

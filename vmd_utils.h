@@ -37,6 +37,7 @@
 #include "core/math/vector3.h"
 #include "core/os/file_access.h"
 #include "core/typedefs.h"
+#include "scene/3d/skeleton.h"
 
 #include "shift_jis.h"
 
@@ -122,8 +123,8 @@ public:
 	}
 	template <typename T, typename Func>
 	static void binary_split(std::vector<T> list, Func pred, T *last_false, T *first_true) {
-		int i = 0;
-		int j = list.size();
+		uint64_t i = 0;
+		uint64_t j = list.size();
 		while (i < j) {
 			int k = (i + j) / 2;
 			if (pred(list[k])) {
@@ -135,5 +136,46 @@ public:
 		first_true = i < list.size() ? &list[i] : nullptr;
 		last_false = i > 0 ? &list[i - 1] : nullptr;
 	}
+
+	static Transform get_bone_global_rest(Skeleton *skel, int bone_i) {
+		if (bone_i == -1) {
+			return Transform();
+		}
+
+		Transform final_transform = skel->get_bone_rest(bone_i);
+		int bone_parent = skel->get_bone_parent(bone_i);
+		while (bone_parent != -1) {
+			final_transform = skel->get_bone_rest(bone_parent) * final_transform;
+			bone_parent = skel->get_bone_parent(bone_parent);
+		}
+		return final_transform;
+	}
+	static Quat quat_from_to_rotation(Vector3 from, Vector3 to) {
+		from = from.normalized();
+		to = to.normalized();
+		Quat q;
+		float d = from.dot(to);
+		if (d >= 1.0) {
+			return Quat();
+		} else if (d < (1.0e-6 - 1.0)) {
+			Vector3 axis = Vector3(1, 0, 0).cross(from);
+			if (axis.length_squared() < (1e-06 * 1e-06)) {
+				axis = Vector3(0, 1, 0).cross(from);
+			}
+			q.set_axis_angle(axis.normalized(), Math_PI);
+		} else {
+			q = Quat();
+			float s = Math::sqrt((1.0+d) * 2.0);
+			float invs = 1.0 / s;
+			Vector3 c = from.cross(to);
+
+			q.x = c.x * invs;
+			q.y = c.y * invs;
+			q.z = c.z * invs;
+			q.w = s * 0.5;
+		}
+		return q.normalized();
+	}
+
 };
 #endif

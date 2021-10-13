@@ -56,6 +56,9 @@ void VMDMotion::add_clip(VMD *vmd) {
 		}
 		curve->keyframes.push_back(keyframe);
 	}
+	for (VMD::IKKeyframe keyframe : vmd->ik_keyframes) {
+		ik.keyframes.push_back(keyframe);
+	}
 }
 
 template <typename T>
@@ -63,17 +66,28 @@ bool keyframe_sort(T a, T b) {
 	return a.frame_number < b.frame_number;
 }
 
-void VMDMotion::_process() {
+void VMDMotion::process_vmds() {
 	// Sort bone keyframes
 	for (auto i : bones) {
 		std::sort(i.second.keyframes.begin(), i.second.keyframes.end(), keyframe_sort<VMD::BoneKeyframe>);
 	}
+	std::sort(ik.keyframes.begin(), ik.keyframes.end(), keyframe_sort<VMD::IKKeyframe>);
+
 	// Sort
 }
 
-VMDMotion::VMDMotion(std::vector<VMD *> vmds) {
-	for (VMD *vmd : vmds) {
-		add_clip(vmd);
+int VMDMotion::get_max_frame() {
+	int max_frame = 0;
+	for (auto bone : bones) {
+		BoneCurve curve = bone.second;
+		int max_subframe = 0;
+		for (auto kf : curve.keyframes) {
+			max_subframe = MAX(kf.frame_number, max_subframe);
+		}
+		max_frame = MAX(max_subframe, max_frame);
 	}
-	_process();
+	return max_frame;
+}
+
+VMDMotion::VMDMotion() {
 }

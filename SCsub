@@ -6,7 +6,10 @@ sources = [
     "register_types.cpp",
     "vmd.cpp",
     "standard_skeleton.cpp",
-    "motion.cpp"
+    "vmd_skeleton.cpp",
+    "motion.cpp",
+    "vmd_player.cpp",
+    "animator.cpp"
 ]
 
 module_env = env.Clone()

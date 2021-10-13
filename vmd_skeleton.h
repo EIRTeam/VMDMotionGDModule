@@ -36,10 +36,14 @@
 #include "scene/3d/skeleton.h"
 #include "scene/3d/spatial.h"
 #include "standard_skeleton.h"
+#include "animator.h"
+#include "core/dictionary.h"
+#include <vector>
 class VMDSkeleton {
 public:
 	class Bone {
-		VMDBone name;
+	public:
+		VMDBoneName name;
 		Spatial *node;
 		Vector3 local_position_0;
 
@@ -51,48 +55,23 @@ public:
 
 		bool ik_enabled = false;
 		int target_bone_skel_i;
+		Bone() : name(VMDBoneName::右手首) {};
+		Bone(VMDBoneName _name, Spatial *_parent_node, Transform source, Transform _target, Skeleton *skel, int _target_bone_skel_i);
+		void apply_target();
+		void update_pose();
 
-		Bone(VMDBone _name, Spatial *_parent_node, Transform _source, Transform _target, Skeleton *skel, int _target_bone_skel_i) {
-			name = _name;
-			skeleton = skel;
-			target_bone_skel_i = _target_bone_skel_i;
-
-			node = memnew(Spatial);
-			node->set_name(String(_name._to_string()));
-			_parent_node->add_child(node);
-
-			Transform nd_trf = Transform();
-			nd_trf.origin = _source.origin;
-
-			node->set_global_transform(nd_trf);
-
-			local_position_0 = node->get_transform().origin;
-
-			target = _target;
-			target_position = nd_trf.xform_inv(target.origin);
-			target_rotation = Basis(nd_trf.basis.get_rotation_quat() * target_rotation);
-			update_pose();
-		}
-
-		void apply_target() {
-			target.origin = node->get_global_transform().xform_inv(target.origin);
-			target_rotation = Basis(node->get_global_transform().basis.get_rotation_quat() * target_rotation);
-			update_pose();
-		}
-
-		void update_pose() {
-			if (skeleton != nullptr && target_bone_skel_i != -1) {
-				skeleton->set_bone_global_pose_override(target_bone_skel_i, target, 1.0, true);
-			}
-		}
-
-		~Bone() {
-			memdelete(node);
-		}
+		~Bone();
 	};
 
 	Spatial *root;
+	Skeleton *skeleton;
+	Vector<VMDSkeleton::Bone> bones;
 
-	VMDSkeleton()
+	void apply_targets();
+	void apply_constraints(bool apply_ik=true, bool apply_ikq=false);
+	void apply_rot_add(Spatial* target, Transform source, bool minus);
+
+	VMDSkeleton(VMDAnimator *animator, Spatial *root_override, Dictionary source_overrides = {});
+	~VMDSkeleton();
 };
 #endif
