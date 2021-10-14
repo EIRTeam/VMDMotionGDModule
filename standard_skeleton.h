@@ -33,11 +33,11 @@
 #define VMD_STANDARD_SKELETON_H
 #include "better_enums/better_enums.h"
 #include "human_body_bones.h"
+#include "vmd_utils.h"
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include "vmd_utils.h"
 
 BETTER_ENUM(VMDBoneName, int,
 		全ての親, センター, グルーブ,
@@ -65,29 +65,30 @@ public:
 	better_enums::optional<VMDBoneName> parent;
 	better_enums::optional<HumanBodyBones> source;
 	better_enums::optional<HumanBodyBones> target;
-	VMDBone(VMDBoneName _name) : name(_name) {
+	VMDBone(VMDBoneName _name) :
+			name(_name) {
 		parent = better_enums::optional<VMDBoneName>();
 		source = better_enums::optional<HumanBodyBones>();
 		target = better_enums::optional<HumanBodyBones>();
 	}
-	VMDBone(VMDBoneName _name, VMDBoneName _parent) : 
+	VMDBone(VMDBoneName _name, VMDBoneName _parent) :
 			name(_name),
 			parent(better_enums::optional<VMDBoneName>(_parent)) {
 		source = better_enums::optional<HumanBodyBones>();
 		target = better_enums::optional<HumanBodyBones>();
 	}
-	VMDBone(VMDBoneName _name, VMDBoneName _parent, HumanBodyBones _source) : 
+	VMDBone(VMDBoneName _name, VMDBoneName _parent, HumanBodyBones _source) :
 			name(_name),
 			parent(better_enums::optional<VMDBoneName>(_parent)),
 			source(better_enums::optional<HumanBodyBones>(_source)) {
-			target = better_enums::optional<HumanBodyBones>();
+		target = better_enums::optional<HumanBodyBones>();
 	}
-	VMDBone(VMDBoneName _name, VMDBoneName _parent, HumanBodyBones _source, HumanBodyBones _target) : 
+	VMDBone(VMDBoneName _name, VMDBoneName _parent, HumanBodyBones _source, HumanBodyBones _target) :
 			name(_name),
 			parent(better_enums::optional<VMDBoneName>(_parent)),
 			source(better_enums::optional<HumanBodyBones>(_source)),
 			target(better_enums::optional<HumanBodyBones>(_target)) {}
-	VMDBone(VMDBoneName _name, VMDBoneName _parent, opt_h(_source), opt_h(_target)) : 
+	VMDBone(VMDBoneName _name, VMDBoneName _parent, opt_h(_source), opt_h(_target)) :
 			name(_name),
 			parent(better_enums::optional<VMDBoneName>(_parent)),
 			source(_source),
@@ -111,7 +112,6 @@ public:
 
 class LimbIK : public VMDConstraint {
 private:
-
 public:
 	VMDBoneName source;
 	VMDBoneName target_0;
@@ -140,4 +140,7 @@ public:
 	}
 };
 
+// We have to do this because implied conversion from const char*
+// to String ignores utf8...
+String VMDBone2String(VMDBoneName name);
 #endif

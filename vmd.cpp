@@ -51,7 +51,6 @@ Error VMD::load(String path) {
 		for (int i = 0; i < bone_frame_count; i++) {
 			bone_keyframes[i].read(file_access);
 		}
-
 		if (file_access->get_position() == file_access->get_len()) {
 			return OK;
 		}

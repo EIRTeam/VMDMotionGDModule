@@ -41,35 +41,34 @@
 
 class VMDMotion {
 private:
-
 public:
 	class BoneCurve {
 	public:
 		std::vector<VMD::BoneKeyframe> keyframes;
 		void sample(float frame_number, Vector3 *position, Quat *rotation) {
-			VMD::BoneKeyframe *prev_frame = nullptr, *next_frame = nullptr;
-			VMDUtils::binary_split(
+			VMDUtils::BSplitResult<VMD::BoneKeyframe> out = VMDUtils::binary_split(
 					keyframes,
 					[frame_number](VMD::BoneKeyframe f) -> bool {
 						return f.frame_number >= frame_number;
-					},
-					prev_frame,
-					next_frame);
+					});
+			Vector3 pos = out.has_last_false ? out.last_false.position : Vector3();
+			Quat rot = out.has_last_false ? out.last_false.rotation : Quat();
+			int prev_number = out.has_last_false ? out.last_false.frame_number : 0;
 
-			*position = prev_frame != nullptr ? prev_frame->position : Vector3();
-			*rotation = prev_frame != nullptr ? prev_frame->rotation : Quat();
-			int prev_number = prev_frame != nullptr ? prev_frame->frame_number : 0;
-
-			if (next_frame != nullptr) {
-				float x = next_frame->interp.X.inv_lerp(prev_number, next_frame->frame_number, frame_number);
-				float y = next_frame->interp.Y.inv_lerp(prev_number, next_frame->frame_number, frame_number);
-				float z = next_frame->interp.Z.inv_lerp(prev_number, next_frame->frame_number, frame_number);
-				float r = next_frame->interp.rotation.inv_lerp(prev_number, next_frame->frame_number, frame_number);
-				position->x = Math::lerp(position->x, next_frame->position.x, x);
-				position->y = Math::lerp(position->y, next_frame->position.y, y);
-				position->z = Math::lerp(position->z, next_frame->position.z, z);
-				*rotation = rotation->slerp(next_frame->rotation, r);
+			if (out.has_first_true) {
+				VMD::BoneKeyframe next_frame = out.first_true;
+				float x = next_frame.interp.X.inv_lerp(prev_number, next_frame.frame_number, frame_number);
+				float y = next_frame.interp.Y.inv_lerp(prev_number, next_frame.frame_number, frame_number);
+				float z = next_frame.interp.Z.inv_lerp(prev_number, next_frame.frame_number, frame_number);
+				float r = next_frame.interp.rotation.inv_lerp(prev_number, next_frame.frame_number, frame_number);
+				pos.x = Math::lerp(pos.x, next_frame.position.x, x);
+				pos.y = Math::lerp(pos.y, next_frame.position.y, y);
+				pos.z = Math::lerp(pos.z, next_frame.position.z, z);
+				rot = rotation->slerp(next_frame.rotation, r);
 			}
+
+			*position = pos;
+			*rotation = rot;
 		}
 
 		Vector3 estimate_rotation_center_from_pos() {
@@ -92,6 +91,7 @@ public:
 	public:
 		std::vector<VMD::FaceKeyframe> keyframes;
 		float sample(float frame_number) {
+			/*
 			VMD::FaceKeyframe *prev_frame = nullptr, *next_frame = nullptr;
 			VMDUtils::binary_split(
 					keyframes,
@@ -107,7 +107,8 @@ public:
 				float w = Math::inverse_lerp(prev_number, next_frame->frame_number, frame_number);
 				weight = Math::lerp(weight, next_frame->weight, w);
 			}
-			return weight;
+			*/
+			return 0.0;
 		}
 	};
 
@@ -115,18 +116,15 @@ public:
 	public:
 		std::vector<VMD::IKKeyframe> keyframes;
 		std::vector<std::tuple<String, bool>> sample(float frame_number) {
-			VMD::IKKeyframe *prev_frame = nullptr, *next_frame = nullptr;
 			std::vector<std::tuple<String, bool>> ik_enable;
-			VMDUtils::binary_split(
+			VMDUtils::BSplitResult<VMD::IKKeyframe> out = VMDUtils::binary_split(
 					keyframes,
 					[frame_number](VMD::IKKeyframe f) -> bool {
-						return f.frame_number >= frame_number;
-					},
-					prev_frame,
-					next_frame);
+						return f.frame_number - 1 >= frame_number;
+					});
 
-			if (prev_frame != nullptr) {
-				return prev_frame->ik_enable;
+			if (out.has_last_false) {
+				return out.last_false.ik_enable;
 			}
 
 			return ik_enable;

@@ -100,7 +100,8 @@ public:
 		file->get_buffer((uint8_t *)vec.data(), length);
 		std::string str(vec.data());
 		std::string utf8_str = sj2utf8(str);
-		String gd_str = String(utf8_str.c_str());
+		String gd_str;
+		gd_str.parse_utf8(utf8_str.c_str(), utf8_str.size());
 		gd_str = gd_str.trim_suffix("\0");
 		gd_str = gd_str.trim_suffix("?");
 		gd_str = gd_str.trim_suffix("\0");
@@ -121,8 +122,15 @@ public:
 		v.w = file->get_float();
 		return v;
 	}
+	template <typename T>
+	struct BSplitResult {
+		bool has_first_true = true;
+		T first_true;
+		bool has_last_false = false;
+		T last_false;
+	};
 	template <typename T, typename Func>
-	static void binary_split(std::vector<T> list, Func pred, T *last_false, T *first_true) {
+	static BSplitResult<T> binary_split(std::vector<T> list, Func pred) {
 		uint64_t i = 0;
 		uint64_t j = list.size();
 		while (i < j) {
@@ -133,15 +141,22 @@ public:
 				i = k + 1;
 			}
 		}
-		first_true = i < list.size() ? &list[i] : nullptr;
-		last_false = i > 0 ? &list[i - 1] : nullptr;
+		BSplitResult<T> out;
+		if (i < list.size()) {
+			out.has_first_true = true;
+			out.first_true = list[i];
+		}
+		if (i > 0) {
+			out.has_last_false = true;
+			out.last_false = list[i - 1];
+		}
+		return out;
 	}
 
 	static Transform get_bone_global_rest(Skeleton *skel, int bone_i) {
 		if (bone_i == -1) {
 			return Transform();
 		}
-
 		Transform final_transform = skel->get_bone_rest(bone_i);
 		int bone_parent = skel->get_bone_parent(bone_i);
 		while (bone_parent != -1) {
@@ -165,7 +180,7 @@ public:
 			q.set_axis_angle(axis.normalized(), Math_PI);
 		} else {
 			q = Quat();
-			float s = Math::sqrt((1.0+d) * 2.0);
+			float s = Math::sqrt((1.0 + d) * 2.0);
 			float invs = 1.0 / s;
 			Vector3 c = from.cross(to);
 
@@ -176,6 +191,6 @@ public:
 		}
 		return q.normalized();
 	}
-
 };
+
 #endif

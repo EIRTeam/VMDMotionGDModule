@@ -31,9 +31,9 @@
 
 #include "register_types.h"
 
+#include "animator.h"
 #include "core/class_db.h"
 #include "vmd.h"
-#include "animator.h"
 #include "vmd_player.h"
 
 void register_vmd_types() {

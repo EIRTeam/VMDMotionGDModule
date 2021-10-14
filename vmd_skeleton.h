@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  skeleton.h                                                           */
+/*  vmd_skeleton.h                                                       */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                          SHINOBU ENGINE                               */
@@ -32,12 +32,12 @@
 #ifndef VMD_SKELETON_H
 #define VMD_SKELETON_H
 
+#include "animator.h"
+#include "core/dictionary.h"
 #include "core/ustring.h"
 #include "scene/3d/skeleton.h"
 #include "scene/3d/spatial.h"
 #include "standard_skeleton.h"
-#include "animator.h"
-#include "core/dictionary.h"
 #include <vector>
 class VMDSkeleton {
 public:
@@ -55,8 +55,9 @@ public:
 
 		bool ik_enabled = false;
 		int target_bone_skel_i;
-		Bone() : name(VMDBoneName::右手首) {};
-		Bone(VMDBoneName _name, Spatial *_parent_node, Transform source, Transform _target, Skeleton *skel, int _target_bone_skel_i);
+		Bone() :
+				name(VMDBoneName::右手首){};
+		Bone(VMDBoneName _name, Spatial *_parent_node, bool has_source, Transform source, Transform _target, Skeleton *skel, int _target_bone_skel_i);
 		void apply_target();
 		void update_pose();
 
@@ -65,11 +66,11 @@ public:
 
 	Spatial *root;
 	Skeleton *skeleton;
-	Vector<VMDSkeleton::Bone> bones;
+	std::vector<std::unique_ptr<VMDSkeleton::Bone>> bones;
 
 	void apply_targets();
-	void apply_constraints(bool apply_ik=true, bool apply_ikq=false);
-	void apply_rot_add(Spatial* target, Transform source, bool minus);
+	void apply_constraints(bool apply_ik = true, bool apply_ikq = false);
+	void apply_rot_add(Spatial *target, Transform source, bool minus);
 
 	VMDSkeleton(VMDAnimator *animator, Spatial *root_override, Dictionary source_overrides = {});
 	~VMDSkeleton();
