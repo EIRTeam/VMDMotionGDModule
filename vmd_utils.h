@@ -2,12 +2,13 @@
 /*  vmd_utils.h                                                          */
 /*************************************************************************/
 /*                       This file is part of:                           */
-/*                          SHINOBU ENGINE                               */
+/*                  SHINOBU ENGINE ANIMATION MODULE                      */
 /*                      https://ph.eirteam.moe                           */
 /*************************************************************************/
 /* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
-/* Copyright (c) 2021-2021 Álex Román Núñez (EIRTeam)                    */
+/* Copyright (c) 2021 Álex Román Núñez (EIRTeam)                         */
+/* Copyright (c) 2021 lox9973                                            */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */

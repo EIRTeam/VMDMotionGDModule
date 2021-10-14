@@ -2,12 +2,13 @@
 /*  enum.h                                                               */
 /*************************************************************************/
 /*                       This file is part of:                           */
-/*                          SHINOBU ENGINE                               */
+/*                  SHINOBU ENGINE ANIMATION MODULE                      */
 /*                      https://ph.eirteam.moe                           */
 /*************************************************************************/
 /* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
-/* Copyright (c) 2021-2021 Álex Román Núñez (EIRTeam)                    */
+/* Copyright (c) 2021 Álex Román Núñez (EIRTeam)                         */
+/* Copyright (c) 2021 lox9973                                            */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -327,7 +328,8 @@
 	X(f, l, 2)                                                                              \
 	X(f, l, 3)                                                                              \
 	X(f, l, 4)                                                                              \
-	X(f, l, 5) X(f, l, 6) X(f, l, 7) X(f, l, 8)                                             \
+	X(f, l, 5)                                                                              \
+	X(f, l, 6) X(f, l, 7) X(f, l, 8)                                                        \
 			X(f, l, 9) X(f, l, 10) X(f, l, 11) X(f, l, 12) X(f, l, 13) X(f, l, 14)          \
 					X(f, l, 15) X(f, l, 16) X(f, l, 17) X(f, l, 18) X(f, l, 19) X(f, l, 20) \
 							X(f, l, 21) X(f, l, 22) X(f, l, 23)
