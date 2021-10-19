@@ -39,7 +39,7 @@
 #include "core/os/file_access.h"
 #include "core/reference.h"
 #include "core/ustring.h"
-#include "shift_jis.h"
+#include "../third_party/shift_jis.h"
 #include "standard_skeleton.h"
 #include "vmd_utils.h"
 #include <tuple>
@@ -77,13 +77,10 @@ public:
 	class FaceKeyframe {
 	public:
 		String name;
-		uint32_t frame_number;
+		int32_t frame_number;
 		float weight;
 		int read(FileAccess *file) {
 			name = VMDUtils::read_vmd_string(file, 15);
-			// For some reason face frame number is uint32s instead of int32s
-			// You sometimes have to wonder what HiguchiM was smoking when he wrote this
-			// god forsaken software
 			frame_number = file->get_32();
 			weight = file->get_float();
 			return OK;

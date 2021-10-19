@@ -57,8 +57,17 @@ void VMDMotion::add_clip(VMD *vmd) {
 		}
 		curve->keyframes.push_back(keyframe);
 	}
+
+	ik.keyframes.reserve(vmd->ik_keyframes.size());
+
 	for (VMD::IKKeyframe keyframe : vmd->ik_keyframes) {
 		ik.keyframes.push_back(keyframe);
+	}
+
+	camera.keyframes.reserve(vmd->camera_keyframes.size());
+	
+	for (VMD::CameraKeyframe keyframe : vmd->camera_keyframes) {
+		camera.keyframes.push_back(keyframe);
 	}
 }
 
@@ -73,8 +82,9 @@ void VMDMotion::process_vmds() {
 		std::sort(i.second.keyframes.begin(), i.second.keyframes.end(), keyframe_sort<VMD::BoneKeyframe>);
 	}
 	std::sort(ik.keyframes.begin(), ik.keyframes.end(), keyframe_sort<VMD::IKKeyframe>);
+	std::sort(camera.keyframes.begin(), camera.keyframes.end(), keyframe_sort<VMD::CameraKeyframe>);
 
-	// Sort
+	// Sort½
 }
 
 int VMDMotion::get_max_frame() {

@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "better_enums/better_enums.h"
+#include "../third_party/better_enums/better_enums.h"
 
 BETTER_ENUM(HumanBodyBones, int,
 		// This is the Hips bone

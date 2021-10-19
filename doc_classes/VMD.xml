@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="VMD" inherits="Reference" version="3.4">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="load">
+			<return type="int" enum="Error" />
+			<argument index="0" name="file_path" type="String" />
+			<description>
+				Loads the VMD file from disk.
+				Returns [code]ERR_FILE_CORRUPT[/code] if the file is invalid.
+				Returns [code]OK[/code] if the file was loaded succesfully;
+			</description>
+		</method>
+	</methods>
+	<constants>
+	</constants>
+</class>

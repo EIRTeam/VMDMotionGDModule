@@ -40,7 +40,7 @@
 #include "core/typedefs.h"
 #include "scene/3d/skeleton.h"
 
-#include "shift_jis.h"
+#include "../third_party/shift_jis.h"
 
 #include <functional>
 #include <string>
@@ -125,7 +125,7 @@ public:
 	}
 	template <typename T>
 	struct BSplitResult {
-		bool has_first_true = true;
+		bool has_first_true = false;
 		T first_true;
 		bool has_last_false = false;
 		T last_false;
@@ -191,6 +191,17 @@ public:
 			q.w = s * 0.5;
 		}
 		return q.normalized();
+	}
+
+	static Vector3 transform_point(Transform p_transform, Vector3 p_point) {
+		Vector3 sc = p_transform.basis.get_scale();
+		return p_transform.basis.get_rotation_quat().xform(Vector3(p_point.x * sc.x, p_point.y * sc.y, p_point.z*sc.z)) + p_transform.origin;
+	}
+
+	static Vector3 inv_transform_point(Transform p_transform, Vector3 p_point) {
+		Vector3 diff = p_point - p_transform.origin;
+		Vector3 sc = p_transform.basis.get_scale();
+		return p_transform.basis.get_rotation_quat().inverse().xform(Vector3(diff.x / sc.x, diff.y / sc.y, diff.z / sc.z));
 	}
 };
 

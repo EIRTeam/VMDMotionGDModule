@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  animator.h                                                           */
+/*  vmd_skeleton.h                                                       */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                  SHINOBU ENGINE ANIMATION MODULE                      */
@@ -30,31 +30,52 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef VMD_ANIMATOR_H
-#define VMD_ANIMATOR_H
+#ifndef VMD_SKELETON_H
+#define VMD_SKELETON_H
+
+#include "../runtime/animator.h"
 #include "core/dictionary.h"
+#include "core/ustring.h"
 #include "scene/3d/skeleton.h"
 #include "scene/3d/spatial.h"
-class VMDAnimator : public Spatial {
-	GDCLASS(VMDAnimator, Spatial);
+#include "standard_skeleton.h"
+#include <vector>
 
-private:
-	Dictionary humanoid_bone_map;
-	Skeleton *skeleton;
-	float humanoid_scale = 0.8f;
-
-protected:
-	static void _bind_methods();
-	void _notification(int p_what);
-
+class VMDSkeleton {
 public:
-	void set_humanoid_bone_map(Dictionary dict);
-	int find_humanoid_bone(String bone_name);
+	class Bone {
+	public:
+		VMDBoneName name;
+		Spatial *node;
+		Vector3 local_position_0;
 
-	void set_humanoid_scale(float scale);
-	float get_humanoid_scale();
+		Transform target;
+		Vector3 target_position;
+		Quat target_rotation;
 
-	Skeleton *get_skeleton();
-	VMDAnimator();
+		Skeleton *skeleton;
+
+		bool ik_enabled = false;
+		int target_bone_skel_i;
+		// Not sure if this is a hack, just ignore it pls senpai
+		Bone() :
+				name(VMDBoneName::右手首){};
+		Bone(VMDBoneName _name, Spatial *_parent_node, bool has_source, Transform source, Transform _target, Skeleton *skel, int _target_bone_skel_i);
+		void apply_target();
+		void update_pose();
+
+		~Bone();
+	};
+
+	Spatial *root;
+	Skeleton *skeleton;
+	std::vector<std::unique_ptr<VMDSkeleton::Bone>> bones;
+
+	void apply_targets();
+	void apply_constraints(bool apply_ik = true, bool apply_ikq = false);
+	void apply_rot_add(Spatial *target, Transform source, bool minus);
+
+	VMDSkeleton(VMDAnimator *animator, Spatial *root_override, Dictionary source_overrides = {});
+	~VMDSkeleton();
 };
 #endif

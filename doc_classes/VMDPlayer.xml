@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="VMDPlayer" inherits="Spatial" version="3.4">
+	<brief_description>
+		A VMD player takes care of playing back the animation data, should be a child of [VMDAnimator].
+	</brief_description>
+	<description>
+		This is the class that actually contains the animatino data and takes care of interpolating it.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="force_update_frame">
+			<return type="void" />
+			<description>
+				Forces the current frame information to be updated now instead of on idle frame. Useless if [control_time_manually] is set to [code]false[/code].
+			</description>
+		</method>
+		<method name="get_playback_position" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the current playback position.
+				Taken from the last shown frame if [control_time_manually] is [code]false[/code] or from the current time if [code]true[/code].
+			</description>
+		</method>
+		<method name="get_suggested_animation_scale" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the suggested animation scale, calculated from the current animation data.
+				Requires the humanoid scale to be set in the parent [VMDAnimator].
+			</description>
+		</method>
+		<method name="load_motions">
+			<return type="int" enum="Error" />
+			<argument index="0" name="motions" type="PoolStringArray" />
+			<description>
+				Loads and combines motion data from the given motion files.
+			</description>
+		</method>
+		<method name="seek">
+			<return type="void" />
+			<argument index="0" name="time" type="float" />
+			<description>
+				Sets the current playback position.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="animation_scale" type="float" setter="set_animation_scale" getter="get_animation_scale" default="0.08">
+			The current animation scale.
+		</member>
+		<member name="control_time_manually" type="bool" setter="set_control_time_manually" getter="get_control_time_manually" default="false">
+			If [code]true[/code], the playback position can be controlled using [seek], useful to sync with music and similar.
+		</member>
+		<member name="enable_ik_rotation" type="bool" setter="set_enable_ik_rotation" getter="get_enable_ik_rotation" default="false">
+			If [code]true[/code], enables applying the rotation to IK constraints, it might be desirable to disable this if the IK rotations are wrong.
+		</member>
+		<member name="locomotion_scale" type="Vector3" setter="set_locomotion_scale" getter="get_locomotion_scale" default="Vector3( 1, 1, 1 )">
+			How much the character should move around.
+		</member>
+	</members>
+	<constants>
+	</constants>
+</class>

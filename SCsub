@@ -4,12 +4,13 @@ Import('env')
 
 sources = [
     "register_types.cpp",
-    "vmd.cpp",
-    "standard_skeleton.cpp",
-    "vmd_skeleton.cpp",
-    "motion.cpp",
-    "vmd_player.cpp",
-    "animator.cpp"
+    "common/vmd.cpp",
+    "common/standard_skeleton.cpp",
+    "common/vmd_skeleton.cpp",
+    "common/motion.cpp",
+    "runtime/vmd_player.cpp",
+    "runtime/animator.cpp",
+    "common/morph.cpp",
 ]
 
 module_env = env.Clone()

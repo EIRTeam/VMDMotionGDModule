@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="VMDAnimator" inherits="Spatial" version="3.4">
+	<brief_description>
+		Generic playback class for VMD animations, should be a child of a [Skeleton] and have a [VMDPlayer] as a child.
+	</brief_description>
+	<description>
+		This class takes care of translating the [VMDPlayer]'s interpolated motion into actual Skeleton transforms, you should set a
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="find_humanoid_bone" qualifiers="const">
+			<return type="int" />
+			<argument index="0" name="bone_name" type="String" />
+			<description>
+				Returns the bone index that corresponds to the given VRM standard bone name. If it can't be found in the [humanoid_bone_map] it will try to find the bone by the given name.
+				Just like with [Skeleton] if the bone can't be found either way [code]-1[/code] will be returned.
+			</description>
+		</method>
+		<method name="get_skeleton" qualifiers="const">
+			<return type="Skeleton" />
+			<description>
+				Returns the skeleton used by this animator, or [code]null[/code] if none can be found.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="humanoid_bone_map" type="Dictionary" setter="set_humanoid_bone_map" getter="get_humanoid_bone_map" default="{}">
+			This dictionary maps the relationship between VRM-spec humanoid bone names and the bone names used by the skeleton, see [url=https://github.com/vrm-c/vrm-specification/blob/master/specification/0.0/README.md#defined-bones]the VRM spec[/url] for more information.
+		</member>
+		<member name="humanoid_scale" type="float" setter="set_humanoid_scale" getter="get_humanoid_scale" default="0.8">
+			The humanoid scale value, this can be naively calculated by taking the height between the plant of the feet/shoes of the character and the hip bone.
+		</member>
+	</members>
+	<constants>
+	</constants>
+</class>

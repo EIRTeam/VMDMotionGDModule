@@ -31,7 +31,7 @@
 /*************************************************************************/
 
 #include "vmd_skeleton.h"
-#include "animator.h"
+#include "../runtime/animator.h"
 #include "vmd_utils.h"
 
 VMDSkeleton::VMDSkeleton(VMDAnimator *animator, Spatial *root_override, Dictionary source_overrides) {
@@ -67,7 +67,6 @@ VMDSkeleton::VMDSkeleton(VMDAnimator *animator, Spatial *root_override, Dictiona
 		}
 		Transform position_transform = source_overrides.get(VMDBone2String(tmplt.name), source_transform);
 		Transform target = !tmplt.target ? Transform() : VMDUtils::get_bone_global_rest(skeleton, target_bone_skel_i);
-		Transform test = VMDUtils::get_bone_global_rest(skeleton, target_bone_skel_i);
 		bones[tmplt.name] = std::make_unique<VMDSkeleton::Bone>(tmplt.name, parent_node, has_source, position_transform, target, skeleton, target_bone_skel_i);
 	}
 }

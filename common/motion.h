@@ -65,7 +65,7 @@ public:
 				pos.x = Math::lerp(pos.x, next_frame.position.x, x);
 				pos.y = Math::lerp(pos.y, next_frame.position.y, y);
 				pos.z = Math::lerp(pos.z, next_frame.position.z, z);
-				rot = rotation->slerp(next_frame.rotation, r);
+				rot = rot.slerp(next_frame.rotation, r);
 			}
 
 			*position = pos;
@@ -92,24 +92,25 @@ public:
 	public:
 		std::vector<VMD::FaceKeyframe> keyframes;
 		float sample(float frame_number) {
-			/*
-			VMD::FaceKeyframe *prev_frame = nullptr, *next_frame = nullptr;
-			VMDUtils::binary_split(
+			VMDUtils::BSplitResult<VMD::FaceKeyframe> out = VMDUtils::binary_split(
 					keyframes,
 					[frame_number](VMD::FaceKeyframe f) -> bool {
 						return f.frame_number >= frame_number;
-					},
-					prev_frame,
-					next_frame);
-			int prev_number = prev_frame != nullptr ? prev_frame->frame_number : 0;
-			float weight = prev_frame != nullptr ? prev_frame->weight : 0.0f;
+					});
+			int last_frame_num = 0;
+			float last_weight = 0.0f;
 
-			if (next_frame != nullptr) {
-				float w = Math::inverse_lerp(prev_number, next_frame->frame_number, frame_number);
-				weight = Math::lerp(weight, next_frame->weight, w);
+			if (out.has_last_false) {
+				last_frame_num = out.last_false.frame_number;
+				last_weight = out.last_false.weight;
 			}
-			*/
-			return 0.0;
+
+			if (out.has_first_true) {
+				float w = Math::inverse_lerp(last_frame_num, out.first_true.frame_number, frame_number);
+				last_weight = Math::lerp(last_weight, out.first_true.weight, w);
+			}
+
+			return last_weight;
 		}
 	};
 
@@ -132,9 +133,66 @@ public:
 		}
 	};
 
+	class CameraCurve {
+	public:
+		std::vector<VMD::CameraKeyframe> keyframes;
+		struct CameraSampleResult {
+			float distance;
+			Vector3 position;
+			Vector3 rotation;
+			float fov;
+			bool ortographic = true;
+		};
+		CameraSampleResult sample(float p_frame_number) {
+			CameraSampleResult result;
+			VMDUtils::BSplitResult<VMD::CameraKeyframe> out = VMDUtils::binary_split(
+					keyframes,
+					[p_frame_number](VMD::CameraKeyframe f) -> bool {
+						return f.frame_number >= p_frame_number;
+					});
+			int last_frame_num = 0;
+			Vector3 last_position;
+			Vector3 last_rotation;
+			float last_fov = 45.0;
+			float last_distance = 0;
+
+			if (out.has_last_false) {
+				VMD::CameraKeyframe* last_frame = &out.last_false;
+				last_frame_num = last_frame->frame_number;
+				last_position = last_frame->position;
+				last_rotation = last_frame->rotation;
+				last_fov = last_frame->angle;
+				last_distance = last_frame->distance;
+			}
+
+			if (!out.has_first_true) {
+				result.position = last_position;
+				result.rotation = last_rotation;
+				result.fov = last_fov;
+				result.distance = last_distance;
+			} else {
+				VMD::CameraKeyframe* next_frame = &out.first_true;
+				float x = next_frame->interp.X.inv_lerp(last_frame_num, next_frame->frame_number, p_frame_number);
+				float y = next_frame->interp.Y.inv_lerp(last_frame_num, next_frame->frame_number, p_frame_number);
+				float z = next_frame->interp.Z.inv_lerp(last_frame_num, next_frame->frame_number, p_frame_number);
+				float r = next_frame->interp.R.inv_lerp(last_frame_num, next_frame->frame_number, p_frame_number);
+				float a = next_frame->interp.angle.inv_lerp(last_frame_num, next_frame->frame_number, p_frame_number);
+				float d = next_frame->interp.dist.inv_lerp(last_frame_num, next_frame->frame_number, p_frame_number);
+				result.position.x = Math::lerp(last_position.x, next_frame->position.x, x);
+				result.position.y = Math::lerp(last_position.y, next_frame->position.y, y);
+				result.position.z = Math::lerp(last_position.z, next_frame->position.z, z);
+				result.rotation = last_rotation.linear_interpolate(next_frame->rotation, r);
+				result.fov = Math::lerp(last_fov, next_frame->angle, a);
+				result.distance = Math::lerp(last_distance, next_frame->distance, d);
+			}
+			return result;
+		};
+	};
+
 	void add_clip(VMD *vmd);
 	std::map<String, BoneCurve> bones;
 	std::map<String, FaceCurve> faces;
+	CameraCurve camera;
 	IKCurve ik;
 	int get_max_frame();
 	void process_vmds();

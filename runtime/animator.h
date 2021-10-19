@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  vmd_player.h                                                         */
+/*  animator.h                                                           */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                  SHINOBU ENGINE ANIMATION MODULE                      */
@@ -30,44 +30,52 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef VMD_PLAYER_H
-#define VMD_PLAYER_H
-
-#include "core/array.h"
-#include "motion.h"
+#ifndef VMD_ANIMATOR_H
+#define VMD_ANIMATOR_H
+#include "core/dictionary.h"
+#include "scene/3d/skeleton.h"
 #include "scene/3d/spatial.h"
-#include <memory>
+#include "scene/3d/mesh_instance.h"
+#include <map>
+#include <vector>
 
-const float VMD_FPS = 30.0f;
-
-class VMDPlayer : public Spatial {
-	GDCLASS(VMDPlayer, Spatial);
-
-private:
-	int max_frame = 0;
-	int first_frame_number = 0;
-	bool apply_ikq = false;
-	float anim_scale = 0.08;
-	int64_t start_time;
-	float time = 0.0f;
-	VMDAnimator *animator;
-	Vector3 locomotion_scale = Vector3(1, 1, 1);
-	VMDMotion motion;
-	std::vector<float> scale_overrides;
-	std::vector<std::tuple<String, bool>> last_ik_enable;
-	int last_ik_enable_frame = 0;
-
+class VMDBlendShapeBind : public Reference {
+	GDCLASS(VMDBlendShapeBind, Reference);
 protected:
-	void _notification(int p_what);
 	static void _bind_methods();
-
 public:
-	std::vector<VMDMotion::BoneCurve> bone_curves;
-	std::unique_ptr<VMDSkeleton> skeleton;
-	Error load_motions(PoolStringArray motions);
-	void update_frame(float frame);
-	void apply_bone_frame(float frame);
-	void apply_ik_frame(float frame);
+	String shape_vmd_name;
+	MeshInstance* mesh;
+	int bind_index;
+	float bind_weight;
+	void create(String p_shape_vmd_name, Node* p_mesh, int p_bind_index, float p_bind_weight);
 };
 
+class VMDAnimator : public Spatial {
+	GDCLASS(VMDAnimator, Spatial);
+
+private:
+	Dictionary humanoid_bone_map;
+	Skeleton *skeleton;
+	float humanoid_scale = 0.8f;
+	std::map<String, std::vector<Ref<VMDBlendShapeBind>>> blend_shape_binds;
+
+protected:
+	static void _bind_methods();
+	void _notification(int p_what);
+
+public:
+	void set_humanoid_bone_map(Dictionary p_humanoid_bone_map);
+	Dictionary get_humanoid_bone_map() const;
+	int find_humanoid_bone(String p_bone_name) const;
+
+	void set_humanoid_scale(float scale);
+	float get_humanoid_scale() const;
+
+	void push_blend_shape(Ref<VMDBlendShapeBind> p_blend_shape);
+	void set_blend_shape_value(String p_vmd_shape_name, float value);
+
+	Skeleton *get_skeleton() const;
+	VMDAnimator();
+};
 #endif

@@ -32,15 +32,18 @@
 
 #include "register_types.h"
 
-#include "animator.h"
+#include "runtime/animator.h"
 #include "core/class_db.h"
-#include "vmd.h"
-#include "vmd_player.h"
+#include "common/vmd.h"
+#include "runtime/vmd_player.h"
+#include "spatial_editor_plugin.h"
 
 void register_vmd_types() {
 	ClassDB::register_class<VMD>();
 	ClassDB::register_class<VMDAnimator>();
 	ClassDB::register_class<VMDPlayer>();
+	ClassDB::register_class<VMDBlendShapeBind>();
+	ClassDB::register_class<HBSpatialEditor>();
 }
 
 void unregister_vmd_types() {

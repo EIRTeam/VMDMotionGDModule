@@ -32,9 +32,10 @@
 
 #include "vmd_player.h"
 #include "core/os/os.h"
-#include "motion.h"
-#include "vmd.h"
+#include "../common/motion.h"
+#include "../common/vmd.h"
 #include <memory>
+
 Error VMDPlayer::load_motions(PoolStringArray motions) {
 	print_line(vformat("%d", motions.size()));
 	ERR_FAIL_COND_V_MSG(animator == nullptr, ERR_INVALID_PARAMETER, "You should really have an animator as the parent of the vmd player");
@@ -106,7 +107,7 @@ Error VMDPlayer::load_motions(PoolStringArray motions) {
 	}
 
 	if (!skeleton) {
-		//anim_scale = 0.07*animator->get_humanoid_scale();
+		anim_scale = 0.07*animator->get_humanoid_scale();
 		skeleton = std::make_unique<VMDSkeleton>(animator, this);
 		// TODO: Port source overrides for some avatar bones
 		// https://gitlab.com/lox9973/VMDMotion/-/blob/master/Script/Runtime/VMDPlayer.cs#L83
@@ -126,10 +127,21 @@ Error VMDPlayer::load_motions(PoolStringArray motions) {
 		scale_overrides[bone] = bone_local_pos_0.length() / curve_local_pos_0.length();
 	}
 
+	std::vector<String> morph_names;
+	for (auto it : motion.faces) {
+		morph_names.push_back(it.first);
+	}
+
+	morph.create_binds(morph_names);
+
 	set_process(true);
 	start_time = OS::get_singleton()->get_ticks_msec();
 
 	return OK;
+}
+
+float VMDPlayer::get_suggested_animation_scale() const {
+	return 0.07 * animator->get_humanoid_scale();
 }
 
 void VMDPlayer::_notification(int p_what) {
@@ -141,7 +153,9 @@ void VMDPlayer::_notification(int p_what) {
 			animator = nullptr;
 		} break;
 		case NOTIFICATION_PROCESS: {
-			time = (OS::get_singleton()->get_ticks_msec() - start_time) / 1000.0;
+			if (!control_time_manually) {
+				time = (OS::get_singleton()->get_ticks_msec() - start_time) / 1000.0;
+			}
 			float frame = time * VMD_FPS;
 			update_frame(frame);
 		} break;
@@ -149,14 +163,62 @@ void VMDPlayer::_notification(int p_what) {
 }
 
 void VMDPlayer::update_frame(float frame) {
-	//apply_ik_frame(frame);
+	frame = CLAMP(frame, 0, max_frame);
+	apply_ik_frame(frame);
 	apply_bone_frame(frame);
-	//skeleton->apply_constraints(true, false);
+	apply_face_frame(frame);
+	skeleton->apply_constraints(true, false);
 	skeleton->apply_targets();
+	morph.apply_targets(animator);
+	if (camera) {
+		apply_camera_frame(frame);
+	}
+	last_frame = frame;
 }
 
 void VMDPlayer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("load_motions", "motions"), &VMDPlayer::load_motions);
+	ClassDB::bind_method(D_METHOD("get_suggested_animation_scale"), &VMDPlayer::get_suggested_animation_scale);
+	
+	ClassDB::bind_method(D_METHOD("set_animation_scale", "animation_scale"), &VMDPlayer::set_animation_scale);
+	ClassDB::bind_method(D_METHOD("get_animation_scale"), &VMDPlayer::get_animation_scale);
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "animation_scale"), "set_animation_scale", "get_animation_scale");
+
+	ClassDB::bind_method(D_METHOD("set_locomotion_scale", "locomotion_scale"), &VMDPlayer::set_locomotion_scale);
+	ClassDB::bind_method(D_METHOD("get_locomotion_scale"), &VMDPlayer::get_locomotion_scale);
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "locomotion_scale"), "set_locomotion_scale", "get_locomotion_scale");
+
+	ClassDB::bind_method(D_METHOD("set_control_time_manually", "control_time_manually"), &VMDPlayer::set_control_time_manually);
+	ClassDB::bind_method(D_METHOD("get_control_time_manually"), &VMDPlayer::get_control_time_manually);
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "control_time_manually"), "set_control_time_manually", "get_control_time_manually");
+	
+	ClassDB::bind_method(D_METHOD("seek", "time"), &VMDPlayer::seek);
+
+	ClassDB::bind_method(D_METHOD("set_enable_ik_rotation", "enable_ik_rotation"), &VMDPlayer::set_enable_ik_rotation);
+	ClassDB::bind_method(D_METHOD("get_enable_ik_rotation"), &VMDPlayer::get_enable_ik_rotation);
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "enable_ik_rotation"), "set_enable_ik_rotation", "get_enable_ik_rotation");
+
+	ClassDB::bind_method(D_METHOD("force_update_frame"), &VMDPlayer::force_update_frame);
+	ClassDB::bind_method(D_METHOD("get_playback_position"), &VMDPlayer::get_playback_position);
+
+	ClassDB::bind_method(D_METHOD("set_camera", "camera"),  &VMDPlayer::set_camera);
+	//ClassDB::bind_method(D_METHOD("get_camera"),  &VMDPlayer::get_camera);
+
+	ClassDB::bind_method(D_METHOD("set_camera_scale", "camera_scale"), &VMDPlayer::set_camera_scale);
+	ClassDB::bind_method(D_METHOD("get_camera_scale"), &VMDPlayer::get_camera_scale);
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "camera_scale"), "set_camera_scale", "get_camera_scale");
+}
+
+void VMDPlayer::apply_face_frame(float p_frame) {
+	p_frame = MAX(p_frame, 0);
+
+	for (auto &it : motion.faces) {
+		float out = it.second.sample(p_frame);
+		auto morphit = morph.shapes.find(it.first);
+		if (morphit != morph.shapes.end()) {
+			morphit->second.weight = out;
+		}
+	}
 }
 
 void VMDPlayer::apply_bone_frame(float frame) {
@@ -171,7 +233,6 @@ void VMDPlayer::apply_bone_frame(float frame) {
 		if (scal == 0) {
 			scal = anim_scale;
 		}
-		scal = 0.061;
 		position *= scal;
 
 		if (bone->name == +VMDBoneName::全ての親 || bone->name == +VMDBoneName::センター ||
@@ -205,4 +266,82 @@ void VMDPlayer::apply_ik_frame(float frame) {
 			skeleton->bones[name]->ik_enabled = enable;
 		}
 	}
+}
+
+void VMDPlayer::apply_camera_frame(float p_frame) {
+	p_frame = MAX(p_frame, 0);
+	VMDMotion::CameraCurve::CameraSampleResult camera_sample = motion.camera.sample(p_frame);
+	Vector3 target_pos = camera_sample.position;
+	target_pos.z *= -1;
+	Quat quat;
+	Vector3 rot = camera_sample.rotation;
+	quat.set_euler(rot);
+
+	Transform camera_trf;
+	camera_trf.basis = Basis(quat);
+	camera_trf.origin = (target_pos + (quat.xform(Vector3(0.0, 0.0, -1.0))) * camera_sample.distance) * camera_scale;
+	camera_trf.rotate(Vector3(0.0, 1.0, 0.0), Math::deg2rad(180.0f));
+	camera->set_global_transform(camera_trf);
+	camera->set_fov(camera_sample.fov);
+}
+
+void VMDPlayer::set_animation_scale(float p_scale) {
+	anim_scale = p_scale;
+}
+
+float VMDPlayer::get_animation_scale() const {
+	return anim_scale;
+}
+
+void VMDPlayer::set_locomotion_scale(Vector3 p_locomotion_scale) {
+	locomotion_scale = p_locomotion_scale;
+}
+
+Vector3 VMDPlayer::get_locomotion_scale() const {
+	return locomotion_scale;
+}
+
+void VMDPlayer::set_enable_ik_rotation(bool p_enable_rotation) {
+	apply_ikq = p_enable_rotation;
+}
+
+bool VMDPlayer::get_enable_ik_rotation() const {
+	return apply_ikq;
+}
+
+float VMDPlayer::get_playback_position() const {
+	return last_frame / VMD_FPS;
+}
+
+void VMDPlayer::seek(float p_time) {
+	if (control_time_manually) {
+		time = p_time;
+	} else {
+		start_time = OS::get_singleton()->get_ticks_msec() - p_time * 1000;
+	}
+}
+
+bool VMDPlayer::get_control_time_manually() const {
+	return control_time_manually;
+}
+
+void VMDPlayer::set_control_time_manually(bool p_control_time_manually) {
+	control_time_manually = p_control_time_manually;
+}
+
+void VMDPlayer::force_update_frame() {
+	update_frame(time);
+}
+
+void VMDPlayer::set_camera(Node *p_camera) {
+	camera = Object::cast_to<Camera>(p_camera);
+	ERR_FAIL_COND(!camera);
+}
+
+float VMDPlayer::get_camera_scale() const {
+	return camera_scale;
+}
+
+void VMDPlayer::set_camera_scale(float p_camera_scale) {
+	camera_scale = p_camera_scale;
 }

@@ -36,19 +36,29 @@
 
 void VMDAnimator::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_humanoid_bone_map", "bone_map"), &VMDAnimator::set_humanoid_bone_map);
+	ClassDB::bind_method(D_METHOD("get_humanoid_bone_map"), &VMDAnimator::get_humanoid_bone_map);
+	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "humanoid_bone_map"), "set_humanoid_bone_map", "get_humanoid_bone_map");
+
+	ClassDB::bind_method(D_METHOD("find_humanoid_bone", "bone_name"), &VMDAnimator::find_humanoid_bone);
+
+	ClassDB::bind_method(D_METHOD("set_humanoid_scale", "bone_map"), &VMDAnimator::set_humanoid_scale);
+	ClassDB::bind_method(D_METHOD("get_humanoid_scale"), &VMDAnimator::get_humanoid_scale);
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "humanoid_scale"), "set_humanoid_scale", "get_humanoid_scale");
+
 	ClassDB::bind_method(D_METHOD("get_skeleton"), &VMDAnimator::get_skeleton);
+
+	ClassDB::bind_method(D_METHOD("push_blend_shape", "blend_shape"), &VMDAnimator::push_blend_shape);
 }
 
-void VMDAnimator::set_humanoid_bone_map(Dictionary new_map) {
-	humanoid_bone_map = new_map;
-}
-
-int VMDAnimator::find_humanoid_bone(String bone_name) {
-	if (humanoid_bone_map.has(bone_name)) {
-		return skeleton->find_bone(humanoid_bone_map[bone_name]);
-	} else {
-		return skeleton->find_bone(bone_name);
+int VMDAnimator::find_humanoid_bone(String p_bone_name) const {
+	if (skeleton) {
+		if (humanoid_bone_map.has(p_bone_name)) {
+			return skeleton->find_bone(humanoid_bone_map[p_bone_name]);
+		} else {
+			return skeleton->find_bone(p_bone_name);
+		}
 	}
+	return -1;
 }
 
 void VMDAnimator::_notification(int p_what) {
@@ -62,7 +72,7 @@ void VMDAnimator::_notification(int p_what) {
 	}
 }
 
-Skeleton *VMDAnimator::get_skeleton() {
+Skeleton *VMDAnimator::get_skeleton() const {
 	return skeleton;
 }
 
@@ -74,6 +84,52 @@ void VMDAnimator::set_humanoid_scale(float scale) {
 	humanoid_scale = scale;
 }
 
-float VMDAnimator::get_humanoid_scale() {
+float VMDAnimator::get_humanoid_scale() const {
 	return humanoid_scale;
 }
+
+void VMDAnimator::set_humanoid_bone_map(Dictionary p_humanoid_bone_map) {
+	humanoid_bone_map = p_humanoid_bone_map;
+}
+
+Dictionary VMDAnimator::get_humanoid_bone_map() const {
+	return humanoid_bone_map;
+}
+
+void VMDAnimator::push_blend_shape(Ref<VMDBlendShapeBind> p_blend_shape) {
+	ERR_FAIL_COND(!p_blend_shape.is_valid());
+	auto it = blend_shape_binds.find(p_blend_shape->shape_vmd_name);
+	if (it != blend_shape_binds.end()) {
+		it->second.push_back(p_blend_shape);
+	} else {
+		std::pair<String, std::vector<Ref<VMDBlendShapeBind>>> pair;
+		pair.first = p_blend_shape->shape_vmd_name;
+		pair.second.push_back(p_blend_shape);
+		blend_shape_binds.insert(pair);
+	}
+}
+
+void VMDAnimator::set_blend_shape_value(String p_vmd_shape_name, float value) {
+	auto it = blend_shape_binds.find(p_vmd_shape_name);
+	if (it != blend_shape_binds.end()) {
+		for (auto group : it->second) {
+			MeshInstance *mesh = group->mesh;
+			if (mesh != nullptr) {
+				float weight = 0.99999 * group->bind_weight / 100.0f;
+				mesh->set(vformat("blend_shapes/morph_%d", group->bind_index), value * weight);
+			}
+		}
+	}
+}
+
+void VMDBlendShapeBind::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("create", "shape_vmd_name", "mesh", "bind_index", "bind_weight"), &VMDBlendShapeBind::create);
+}
+
+void VMDBlendShapeBind::create(String p_shape_vmd_name, Node* p_mesh, int p_bind_index, float p_bind_weight) {
+	shape_vmd_name = p_shape_vmd_name;
+	mesh = Object::cast_to<MeshInstance>(p_mesh);
+	bind_index = p_bind_index;
+	bind_weight = p_bind_weight;
+}
+
